@@ -1,0 +1,15 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Build output
+build/
+dist/
+*.egg-info/
+
+# Local configuration
+.env
+.env.*
+.DS_Store
