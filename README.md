@@ -1,93 +1,119 @@
-# 2주차 FastAPI 실습
+# SI Unit Decomposer
 
-이름을 받아 인사말을 반환하는 작은 API다. `uv`로 의존성을 관리하고, `src/` 레이아웃과 `uv_build` 빌드 백엔드를 사용한다.
+SI 유도 단위를 SI 기본 단위로 분해하는 웹 애플리케이션입니다.
 
-## 파일 구성
+사용자가 단위 수식을 입력하면 FastAPI 백엔드에서 차원을 분석하고, React 프론트엔드에서 결과를 표시합니다.
 
-| 파일 | 역할 |
-| --- | --- |
-| `backend/src/backend/main.py` | FastAPI 앱, 인사 함수, 요청 모델 |
-| `backend/tests/test_main.py` | 정상 입력과 빈 문자열 입력 테스트 |
-| `backend/pyproject.toml` | 프로젝트 정보, 의존성, 빌드 설정 |
-| `backend/uv.lock` | 의존성 버전 기록 |
-| `backend/.python-version` | 사용할 Python 버전 |
-| `.pre-commit-config.yaml` | 커밋 전 파일 검사 설정 |
+## 기술 스택
 
-강의의 `main.py`는 `backend/src/backend/main.py`로 옮겼다. 테스트는 `backend/tests/test_main.py`에 있으며, 앱을 불러오는 코드는 `from backend.main import app`이다. API 기능과 두 테스트의 내용은 강의 예제와 같다.
+- **Backend:** Python, FastAPI, Pydantic
+- **Frontend:** React, JavaScript, Vite
+- **Testing:** pytest, FastAPI TestClient
+- **Package Management:** uv, npm
 
-## 실행
+## 주요 기능
 
-`uv`를 설치한 뒤 저장소의 루트 폴더에서 아래 명령을 한 줄씩 실행한다. `uv sync`는 저장된 프로젝트 설정과 잠금 파일을 이용해 Python 환경과 의존성을 준비한다.
+- SI 기본 단위 및 이름이 붙은 SI 유도 단위 분석
+- 곱셈(`*`), 나눗셈(`/`), 정수 거듭제곱(`^`) 지원
+- 같은 단위가 여러 번 등장하는 수식 처리
+- 차원이 소거되면 `1` 출력
+- 잘못된 입력에 대한 오류 메시지 표시
+
+### 사용 예시
+
+| 입력 | 출력 |
+|---|---|
+| `N` | `kg·m·s⁻²` |
+| `N*m` | `kg·m²·s⁻²` |
+| `N/m^2` | `kg·m⁻¹·s⁻²` |
+| `N^2/N` | `kg·m·s⁻²` |
+| `s/s` | `1` |
+
+괄호와 단위의 크기 변환 계수는 지원하지 않습니다.
+
+## 프로젝트 구조
+
+```text
+week2/
+├── backend/
+│   ├── src/backend/
+│   │   ├── main.py
+│   │   └── analyzer.py
+│   └── tests/
+│       └── test_main.py
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   └── App.css
+│   └── package.json
+└── README.md
+```
+
+## 실행 방법
+
+### 1. 백엔드
 
 ```bash
 cd backend
 uv sync
-uv run pre-commit install
 uv run fastapi dev src/backend/main.py
 ```
 
-`pre-commit install`은 이 저장소에 커밋 전 검사 훅을 등록한다. 저장소를 새로 받은 사람은 각자 한 번 실행한다.
+백엔드 API 문서는 다음 주소에서 확인할 수 있습니다.
 
-서버가 실행 중인 상태에서 브라우저로 [API 문서](http://127.0.0.1:8000/docs)를 연다. 이후 명령도 `backend` 폴더에서 실행한다.
+`http://127.0.0.1:8000/docs`
 
-## API 확인
+### 2. 프론트엔드
 
-| 메서드 | 경로 | 동작 |
-| --- | --- | --- |
-| GET | `/health` | `{"status": "ok"}` 반환 |
-| GET | `/hello?name=민수` | 쿼리 파라미터의 이름으로 인사말 반환. 이름을 생략하면 `친구` 사용 |
-| POST | `/hello` | JSON 본문의 이름을 검증한 뒤 인사말 반환 |
+별도의 터미널에서 실행합니다.
 
-POST 요청은 `/docs`에서 `POST /hello`를 선택하고 **Try it out**을 누른 뒤, 다음 본문을 입력하고 **Execute**를 누른다.
-
-```json
-{"name": "민수"}
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-정상 요청에는 상태 코드 `200`과 다음 응답을 반환한다.
+터미널에 표시되는 로컬 주소(일반적으로 `http://localhost:5173`)로 접속합니다.
+
+백엔드와 프론트엔드는 동시에 실행되어야 합니다.
+
+## API
+
+### POST /analyze
+
+**요청**
 
 ```json
-{"message": "안녕하세요, 민수님!"}
+{
+  "input": "N*m/s^2"
+}
 ```
 
-POST의 `name`은 필수 문자열이며 길이는 1~30자다. `{}`처럼 이름을 생략하거나 `{"name": ""}`처럼 빈 문자열을 보내면 상태 코드 `422`를 반환한다.
+**응답**
+
+```json
+{
+  "result": "kg·m²·s⁻⁴"
+}
+```
+
+잘못된 단위 또는 수식은 HTTP 400 오류로 처리합니다. 입력 길이 제한 등 Pydantic 검증 오류는 HTTP 422로 처리됩니다.
 
 ## 테스트
 
-서버를 실행한 터미널에서 `Ctrl+C`로 종료한 뒤 실행한다. `TestClient` 테스트에는 실행 중인 서버가 필요 없다.
+백엔드 디렉터리에서 다음 명령어를 실행합니다.
 
 ```bash
 uv run pytest
 ```
 
-정상 요청의 인사말과 빈 문자열 요청의 오류 응답을 확인하는 두 테스트가 있다.
+정상적인 단위 분해, 반복되는 단위, 무차원 결과, 잘못된 입력 등을 테스트합니다.
 
-## pre-commit 검사
-
-Git 강의와 같은 세 가지 훅을 사용한다.
-
-- `trailing-whitespace`: 줄 끝 공백 제거
-- `end-of-file-fixer`: 파일 끝 개행 정리
-- `check-yaml`: YAML 문법 검사
-
-전체 파일을 직접 검사하려면 다음 명령을 실행한다.
+## 프론트엔드 정적 빌드
 
 ```bash
-uv run pre-commit run --all-files
+cd frontend
+npm run build
 ```
 
-훅이 파일을 수정하면 변경 내용을 확인하고 `git add`한 뒤 다시 커밋한다.
-
-## 빌드
-
-```bash
-uv build
-```
-
-`uv_build`가 패키지를 빌드하며, 결과 파일은 `backend/dist/`에 생성된다.
-
-## 참고 문서
-
-- [uv 설치](https://docs.astral.sh/uv/getting-started/installation/)
-- [uv 빌드 백엔드](https://docs.astral.sh/uv/concepts/build-backend/)
-- [pre-commit](https://pre-commit.com/)
+빌드 결과물은 `frontend/dist/`에 생성됩니다.
