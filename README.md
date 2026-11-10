@@ -35,6 +35,7 @@ SI 유도 단위를 SI 기본 단위로 분해하는 웹 애플리케이션입�
 
 ## 프로젝트 구조
 
+```
 week2/
 ├── backend/
 │   ├── Dockerfile
@@ -64,6 +65,7 @@ week2/
 ├── compose.yaml
 ├── .gitignore
 └── README.md
+```
 
 ## Docker Compose 실행 (3주차)
 
