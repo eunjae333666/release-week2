@@ -10,6 +10,8 @@ SI 유도 단위를 SI 기본 단위로 분해하는 웹 애플리케이션입�
 - **Frontend:** React, JavaScript, Vite
 - **Testing:** pytest, FastAPI TestClient
 - **Package Management:** uv, npm
+- **Web Server:** Nginx
+- **Containerization:** Docker, Docker Compose
 
 ## 주요 기능
 
@@ -33,21 +35,86 @@ SI 유도 단위를 SI 기본 단위로 분해하는 웹 애플리케이션입�
 
 ## 프로젝트 구조
 
-```text
 week2/
 ├── backend/
-│   ├── src/backend/
-│   │   ├── main.py
-│   │   └── analyzer.py
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── pyproject.toml
+│   ├── uv.lock
+│   ├── README.md
+│   ├── src/
+│   │   └── backend/
+│   │       ├── __init__.py
+│   │       ├── main.py
+│   │       └── analyzer.py
 │   └── tests/
 │       └── test_main.py
+│
 ├── frontend/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── nginx.conf
 │   ├── src/
 │   │   ├── App.jsx
 │   │   └── App.css
-│   └── package.json
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+│
+├── compose.yaml
+├── .gitignore
 └── README.md
+
+## Docker Compose 실행 (3주차)
+
+Docker를 이용해 프론트엔드와 백엔드를 각각 컨테이너로 실행하고, Docker Compose로 통합 관리합니다.
+
+### 실행 환경
+
+- Docker Desktop (또는 Docker Engine)
+- Docker Compose
+
+### 실행
+
+프로젝트 최상위 디렉터리에서 다음 명령어를 실행합니다.
+
+```bash
+docker compose up --build -d
 ```
+
+브라우저에서 `http://localhost:8080`으로 접속합니다.
+
+### 실행 상태 확인
+
+```bash
+docker compose ps
+```
+
+백엔드의 healthcheck를 통해 정상 실행 여부를 확인할 수 있습니다.
+
+로그 확인:
+
+```bash
+docker compose logs -f
+```
+
+### 종료
+
+```bash
+docker compose down
+```
+
+### 컨테이너 구성
+
+- **Backend:** Python 3.12와 FastAPI를 사용하며, Uvicorn으로 API 서버를 실행합니다.
+- **Frontend:** Node.js로 React 애플리케이션을 빌드한 후 Nginx를 통해 정적 파일을 제공합니다.
+- **Nginx:** `/api/`로 시작하는 요청을 백엔드 컨테이너로 전달하면서 `/api/` 접두사를 제거합니다.
+- **Docker Compose:** 두 서비스의 빌드, 네트워크 연결, 포트 매핑 및 백엔드 healthcheck를 관리합니다.
+
+브라우저의 `/api/analyze` 요청은 Nginx를 거쳐 FastAPI의 `/analyze` 엔드포인트로 전달됩니다.
+
+별도의 데이터베이스를 사용하지 않으므로 영구 데이터 저장용 Docker Volume은 구성하지 않았습니다.
+
 
 ## 실행 방법
 
