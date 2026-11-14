@@ -1,0 +1,120 @@
+
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 같은 서버의 배포를 동시에 실행하지 않습니다.
+concurrency:
+  group: study-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.4"
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --locked
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run checks
+        working-directory: backend
+        run: uv run pre-commit run --all-files
+
+      - name: Test backend
+        working-directory: backend
+        run: uv run pytest
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Check deployment files
+        working-directory: deploy
+        env:
+          DOCKERHUB_USERNAME: study-example
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          bash -n deploy.sh
+          docker compose config -q
+
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend
+        working-directory: backend
+        run: |
+          IMAGE="$DOCKERHUB_USERNAME/study-backend:$IMAGE_TAG"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Build and push frontend
+        working-directory: frontend
+        run: |
+          IMAGE="$DOCKERHUB_USERNAME/study-frontend:$IMAGE_TAG"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          fingerprint: ${{ secrets.EC2_FINGERPRINT }}
+          envs: DOCKERHUB_USERNAME,IMAGE_TAG
+          script: |
+            set -e
+            cd ~/release-week2
+            git fetch origin main
+            git checkout ${{ github.sha }}
+            cd deploy
+            bash deploy.sh
