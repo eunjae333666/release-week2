@@ -186,3 +186,55 @@ npm run build
 ```
 
 빌드 결과물은 `frontend/dist/`에 생성됩니다.
+
+## GitHub Actions CI/CD 및 AWS EC2 배포 (4주차)
+
+GitHub Actions를 활용하여 코드 검사, Docker 이미지 빌드 및 업로드, AWS EC2 배포 과정을 자동화했습니다.
+
+### 배포 구조
+
+```text
+GitHub (main 브랜치에 push)
+    ↓
+GitHub Actions
+    ├── test: 백엔드 테스트 및 프론트엔드 빌드
+    ├── publish: Docker 이미지 빌드 및 Docker Hub 업로드
+    └── deploy: SSH를 통해 EC2 서버에 배포
+                     ↓
+              Docker Compose
+                     ↓
+              Nginx + FastAPI
+```
+
+### 자동 배포 과정
+
+1. `main` 브랜치에 변경 사항을 push하면 GitHub Actions가 실행됩니다.
+2. 백엔드 테스트 및 프론트엔드 빌드 검사를 수행합니다.
+3. 검사가 성공하면 백엔드와 프론트엔드 Docker 이미지를 빌드하여 Docker Hub에 게시합니다.
+4. 이미지 태그에는 GitHub 커밋 SHA를 사용합니다.
+5. SSH를 통해 EC2에 접속하여 `deploy.sh`를 실행하고 컨테이너를 갱신합니다.
+
+### 배포 설정 파일
+
+- `.github/workflows/deploy.yml`: CI/CD 파이프라인 정의
+- `deploy/compose.yaml`: EC2 배포용 Docker Compose 설정
+- `deploy/deploy.sh`: 이미지 다운로드, 컨테이너 재실행 및 상태 확인
+- `deploy/.env.example`: 배포 환경 변수 예시
+
+### 배포 결과
+
+GitHub Actions를 통한 자동 배포에 성공했으며, 프론트엔드의 제목을 수정한 후 다시 push하여 변경 사항이 EC2 웹사이트에 반영되는 것을 확인했습니다.
+
+- [GitHub Actions 실행 기록](https://github.com/eunjae333666/release-week2/actions)
+- Docker Hub 이미지: `study-backend`, `study-frontend`
+- 실행 환경: AWS EC2, Ubuntu, Docker Compose
+
+배포 검증을 위해 실제 웹 화면의 변경 전후를 비교했습니다.
+
+**배포 전**
+
+![배포 전](docs/before.png)
+
+**배포 후**
+
+![배포 후](docs/after.png)
