@@ -81,7 +81,7 @@ def tokenize(input: str)->list[str]:
 
 
 def analyze(input:str)-> str:
-    """ 
+    """
     *, /, ^로 연산되어 있는 단위를 기본 SI unit으로 변환해준다.
     """
     result={}
@@ -105,7 +105,7 @@ def analyze(input:str)-> str:
                 power=1
                 if i+3<len(tokens) and tokens[i+2]=='^':
                     power=int(tokens[i+3])
-                    i+=2                
+                    i+=2
                 for key,exponent in units[t].items():
                     result[key]=result.get(key,0)+exponent*power
                 i+=2
@@ -122,7 +122,7 @@ def analyze(input:str)-> str:
                 i+=2
             else: raise ValueError(f"잘못된 단위 또는 수식입니다: {t}")
         else: raise ValueError("잘못된 단위 또는 수식입니다.")
-        
+
     return format_result(result)
 
 

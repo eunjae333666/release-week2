@@ -51,6 +51,6 @@ class AnalyzeRequest(BaseModel):
 def analyze_post(body: AnalyzeRequest):
     try:
         return {"result": analyze(body.input)}
-    
+
     except ValueError as error:
         raise HTTPException(status_code=400,detail=str(error)) from error

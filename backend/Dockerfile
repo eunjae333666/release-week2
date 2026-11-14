@@ -18,7 +18,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 
+    PYTHONUNBUFFERED=1
 
 COPY --from=build /app/.venv /app/.venv
 RUN useradd --create-home app
