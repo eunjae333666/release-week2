@@ -1,0 +1,23 @@
+name: study-app
+
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/study-backend:${IMAGE_TAG}
+    restart: unless-stopped
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/study-frontend:${IMAGE_TAG}
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
