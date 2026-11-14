@@ -36,9 +36,14 @@ SI 유도 단위를 SI 기본 단위로 분해하는 웹 애플리케이션입�
 ## 프로젝트 구조
 
 ```
-week2/
+
+release-week2/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml         # GitHub Actions CI/CD 워크플로
+│
 ├── backend/
-│   ├── Dockerfile
+│   ├── Dockerfile             # FastAPI 이미지 빌드
 │   ├── .dockerignore
 │   ├── pyproject.toml
 │   ├── uv.lock
@@ -52,9 +57,9 @@ week2/
 │       └── test_main.py
 │
 ├── frontend/
-│   ├── Dockerfile
+│   ├── Dockerfile             # React 빌드 및 Nginx 구성
 │   ├── .dockerignore
-│   ├── nginx.conf
+│   ├── nginx.conf             # API 리버스 프록시 설정
 │   ├── src/
 │   │   ├── App.jsx
 │   │   └── App.css
@@ -62,7 +67,17 @@ week2/
 │   ├── package-lock.json
 │   └── vite.config.js
 │
-├── compose.yaml
+├── deploy/
+│   ├── compose.yaml           # EC2 배포용 Compose
+│   ├── deploy.sh              # 자동 배포 스크립트
+│   └── .env.example           # 배포 환경 변수 예시
+│
+├── docs/
+│   ├── before.png             # 배포 전 화면
+│   └── after.png              # 배포 후 화면
+│
+├── compose.yaml               # 로컬 개발용 Compose
+├── .pre-commit-config.yaml
 ├── .gitignore
 └── README.md
 ```
